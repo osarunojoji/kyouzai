@@ -1,0 +1,81 @@
+body {font-family: 'Lucida Grande', 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, 'メイリオ', sans-serif; position: relative;}
+body.loading:before {
+	z-index: 3101;
+	content: '';
+	display: block;
+	position: fixed;
+    top:calc(50% - 50px/2);
+	left:calc(50% - 50px/2);
+	width: 50px;
+	height: 50px;
+	border: 5px solid #333;
+	border-right: 5px solid transparent;
+	border-radius: 30px;
+	animation: loading 1s linear infinite;
+}
+@keyframes loading {
+	to {}
+	from {
+		transform: rotate(360deg);
+		transform-origin: 50% 50%;
+	}
+}
+body.loading [data-mainarea] {visibility: hidden; min-height: 300px;}
+
+/* header */
+#navbar {background-color: #183762; color: #fff;}
+#navbar .navbar-brand {padding: 0;}
+#navbar .navbar-brand img {max-height: 50px;}
+#navbar .dropdown-menu {z-index: 3010;}
+.container .categorytitle .title {font-size: 20px; background-color: #1abc9c; color: #fff; padding: 7px 5px 5px 5px;}
+
+/* body */
+#body {position: relative; background-color: #fff; z-index: 1000;}
+#body .container, #screen #body .container {position: relative; margin-bottom: 50px; padding-bottom: 25px;}
+body.pr #body .container, body.pr #screen #body .container { margin-bottom: 250px;}
+#body td, #body th {font-family: 'Lucida Grande', 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, 'メイリオ', sans-serif;}
+
+/* footer */
+.footer-wrap {z-index: 1;}
+#globalLink .list-group {margin-bottom: 5px; margin-top: 20px;}
+#globalLink .list-group a {color: #337ab7;}
+#footer {padding-top: 10px; padding-bottom: 0; text-align: center; background-color: #eee; font-size: 12px;}
+#footer .copyright-wrap img {margin-right: 5px;}
+
+/* modal */
+.modal-cookie {z-index: 3200;}
+.modal-cookie label {cursor: pointer;}
+.modal-cookie label.cover,
+.modal-cookie label.year,
+.modal-cookie label.grade,
+.modal-cookie label.base,
+.modal-cookie label.book
+{padding: 10px 5px;}
+.modal-cookie .cover,
+.modal-cookie .year,
+.modal-cookie .grade,
+.modal-cookie .base,
+.modal-cookie .book
+ {border: 1px solid #ccc;}
+.modal-cookie .active .cover,
+.modal-cookie .active.year,
+.modal-cookie .active.grade,
+.modal-cookie .active.base,
+.modal-cookie .active.book {border-color: #ff0000;}
+.modal-cookie .setting-unit {margin-bottom: 20px;}
+.modal-cookie .setting-unit label {font-size: 16px; font-weight: bold;}
+@media screen and (max-width: 767px) {
+	.modal-cookie label,.modal-cookie .setting-unit label {font-size: 12px;}
+	.modal-cookie .modal-title,
+	.modal-cookie .select-title {font-size: 14px;}
+	.modal-cookie .setting-unit {margin-bottom: 5px;}
+	.modal-cookie .setting-unit.select-grade div,
+	.modal-cookie .setting-unit.select-base div,
+	.modal-cookie .setting-unit.select-book div,
+	.modal-cookie .setting-unit.select-year div {padding-left: 5px; padding-right: 5px;}
+}
+.cookie-info {position: absolute; top: -15px; left: 5px; padding: 5px; font-size: 11px; font-weight: bold;}
+.modal-cookie .base img.logo {max-width:32px;}
+@media screen and (max-width:767px) {
+	.modal-cookie .base img.logo {max-width:20px;}
+}

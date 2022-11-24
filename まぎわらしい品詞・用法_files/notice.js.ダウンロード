@@ -1,0 +1,66 @@
+(function () {
+    var els = document.querySelectorAll('[data-notice]');
+    //社内表示用の規定コンテンツ初期値(半角英数のみ)
+    var defaultPrivateHtml = '<div class="private-only"><p class="text-center"><mark>This content is only visible in the local network.</mark></p></div>';
+    if (els.length) {
+        //ここで規定コンテンツをフェッチ
+        fetch('/db/notice/defaultPrivateHtml.txt').then(function (response) {
+            if (!response.ok) { throw new Error(); }
+            return response.text();
+        }).then(function (text) {
+            if (text) {
+                //規定コンテンツを取得できたら初期値から差し替え
+                defaultPrivateHtml = text;
+            }
+        }).catch(function () {
+        }).finally(function () {
+            showNotice(els);
+        });
+    }
+    function showNotice(els) {
+        Array.from(els).forEach(function (el) {
+            var noticeFileName = el.getAttribute('data-notice') + '.html';
+            var pathList = ['private', 'public'];//告知ファイルの場所
+            el.innerHTML = '';//要素のinnerHTMLを初期化
+            pathList.map(function (name) {//promiseの配列を作成
+                return function () {
+                    return fetch('/db/notice/' + name + '/' + noticeFileName).then(function (response) {
+                        if (!response.ok) { throw new Error(); }
+                        return response.text();
+                    }).then(function (text) {
+                        if (text) {
+                            //告知内容を要素のinnerHTMLに追記
+                            el.innerHTML += text;
+                            //privateとpublicの判別用
+                            el.className = (el.className + ' notice-' + name).trim();
+                            var privateElement = el.querySelectorAll('.private-only');
+                            if (name === 'private') {
+                                if (privateElement.length === 0) {
+                                    //規定コンテンツを追加
+                                    el.innerHTML = defaultPrivateHtml + el.innerHTML;
+                                }
+                            }
+                            if (name === 'public') {
+                                //private-only要素はすべて削除
+                                privateElement.forEach(function (el) {
+                                    return el.remove();
+                                });
+                            }
+                        }
+                    }).catch(function () {
+                        //例外は無視
+                    });
+                };
+            }).reduce(function (promise, resolve) {
+                return promise.then(resolve);
+            }, Promise.resolve()).then(function () {//innerHTMLが空の不要な要素は削除
+                if (!el.innerHTML) {
+                    el.parentNode.removeChild(el);
+                    el.dispatchEvent(new Event('notice-fail'));
+                } else {
+                    el.dispatchEvent(new Event('notice-success'));
+                }
+            });
+        });
+    }
+})();

@@ -1,0 +1,204 @@
+$(function () {
+	$('#cookieModal').on('hide.bs.modal', function (event) {
+		var cookieHash = {};
+		var nameTable = {
+			'select-year': '年度',
+			'select-base': '準拠',
+			'select-book': '冊子'
+		}
+		$(event.target).find('.settings:checked').each(function(i,e){
+			cookieHash[nameTable[e.name]] = e.value;
+		});
+		Cookies.set('naruhod-settings', cookieHash, { expires: 365, path: location.pathname.split('/').slice(0, 4).join('/') });
+		location.reload();
+	})
+	$('#cookieModal input').on('change', function(){
+		$(this).closest('.setting-unit').find('label').each(function(i,e){
+			$(e).toggleClass('active', $(e).find('input').prop('checked'));
+		});
+	});
+});
+
+// function setCookieInfo(key){
+// 	//ここの処理は教科教材別にカスタマイズ必須
+// 	var mes = { '2022': '2022年度 3年生用', '2021': '2021年度 3年生用' };
+// 	$('.cookie-info a').text(mes[key]).on('click', function () { $('#cookieModal').modal(); });
+// 	$('.cookie-info').removeClass('hidden');
+// 	$('#cookieModal input[value=' + key + ']').prop('checked', true).change();
+// }
+
+function buildPage(path, tocSelector, mode, conditions, number, prFlg) {
+	$.ajax({
+		type: 'GET',
+		dataType: 'json',
+		cache: false,
+		url: path
+	}).done(function(json){
+		var data;
+		json.some(function (v) {
+			if( Object.keys(conditions).every(function(x){ return conditions[x] == v[x]; }) ) {
+				data = v;
+				return true;
+			}
+		});
+		if(data){
+			switch (mode) {
+				case 'top':
+					$('[data-cover-img]').attr('src', data['表紙']);
+					$('[book-name]').text(data['表示'] || data['冊子']);
+					break;
+				case 'video':
+					$('[book-name]').text(data['表示'] || data['冊子']);
+					setElemets(data, number, 'wgs');
+					break;
+				/*case 'cg':
+					setElemets(data, number, 'wg');
+					break;*/
+				default:
+					break;
+			}
+			setTocs(data, tocSelector, prFlg);
+			$('body').removeClass('loading');
+		} else {
+			//JSONデータが取得できないのはcookie値との不整合が原因のため、cookieを削除しmodalを表示する。
+			alert('対応するデータはありませんでした。正しい内容を選択してください。\n');
+			// Cookies.remove('naruhod-settings', { path: location.pathname.split('/').slice(0, 4).join('/') });
+			// $('#cookieModal').modal();
+		}
+	}).fail(function(jqXHR){
+		alert('データ読み込みに失敗いたしました。\n申し訳ございませんが、時間をおいて再度お試しください。');
+	});
+}
+
+function redirectPR(path, conditions, number) {
+	$.ajax({
+		type: 'GET',
+		dataType: 'json',
+		cache: false,
+		url: path
+	}).done(function (json) {
+		var data, values;
+		json.some(function (v) {
+			if (Object.keys(conditions).every(function (x) { return conditions[x] == v[x]; })) {
+				data = v;
+				return true;
+			}
+		});
+		values = data.items.filter(function (item, index) { if (item['掲載順'] == number ) return true; })[0];
+		var url = (values) ? '/kid/k/st/wg' + values['管理番号'] + '/?mode=pr' : '/kid/k/st/pr/?type=notfound';
+		location.replace( url );
+	}).fail(function (jqXHR) {
+		alert('データ読み込みに失敗いたしました。\n申し訳ございませんが、時間をおいて再度お試しください。');
+	});
+}
+
+function setElemets(data, n, type) {
+	var values = data.items.filter(function (item, index) { if (item['管理番号'] == n ) return true; })[0];
+	if(values){
+		$('[data-title]').each(function(i,e){
+			var title = values['動画タイトル'];
+			if( e.getAttribute('content') ) {
+				e.setAttribute('content', title);
+			} else {
+				$(e).text( title );
+			}
+		});
+		$('[data-url]').each(function(i,e){
+			var url = 'http://meijitosho.co.jp/kid/k/st/wg' + values['管理番号'] + '/';
+			if( e.getAttribute('content') ) {
+				e.setAttribute('content', url );
+			} else if ( e.getAttribute('href') ) {
+				e.setAttribute('href', url );
+			} else {
+				$(e).text( url );
+			}
+		});
+		$('[data-description]').each(function(i,e){
+			//教科教材別設定必須
+			var description = '明治図書の高校入試対策教材『整理と対策 国語』の動画解説です。【' + values['動画タイトル'] + '】の解説アニメーションです。';
+			if( e.getAttribute('content') ) {
+				e.setAttribute('content', description);
+			} else {
+				$(e).text( description );
+			}
+		});
+		$('[data-page]').each(function(i,e){
+			//var page = ((values['識別子'] == 'wg')? '【CG】' : '【作図】') + values['ページ情報'];
+			//$(e).text( page );
+			$(e).text(values['ページ情報']);
+		});
+		$('[data-number]').each(function(i,e){
+			var number = values['問題番号'];
+			var color = values['番号文字色'];
+			var background = values['番号背景色'];
+			$(e).text( number ).css( {'color': color,'background-color': background} );
+		});
+		$('[data-video]').each(function(i,e){
+			var video = values['動画ファイル名'];
+			var vpath = '/db/kid/k/movie/' + video;
+			$.ajax({
+				url: vpath,
+				cache: false,
+				type: 'HEAD'
+			}).done(function () {
+				e.src = vpath;
+			}).fail(function (jqXHR) {
+				$(e).addClass('hidden');
+				$('[data-backbutton-top]').on('click', function () { location.href = location.pathname.split('/').slice(0, 4).join('/') + '/'; });
+				$('[data-video-button]').prop('disabled', true);
+			});
+			//表示状態でsrcを設定するだけではSafariが再生アイコンを表示してくれないため、hiddenクラスの初期付与と表示を行う。
+			$(e).removeClass('hidden');
+		});
+	} else {
+		//▼valuesがundefinedになるケース
+		//1. 存在しない動画番号を指定した場合
+		//2. cookieの年度情報とアクセスした動画番号に齟齬がある（＝削除された動画にアクセス）した場合
+		//いずれの場合でもTOPへのリダイレクトで解決可能
+		location.replace('/kid/k/st/');
+	}
+}
+
+function setTocs(data, selector, prFlg){
+	var $template = $(selector).find('.template');
+	//data.items.forEach(function(e){
+	data.items.sort(function (a, b) { return (parseInt(a['掲載順'], 10) < parseInt(b['掲載順'], 10)) ? -1 : 1; }).forEach(function (e) {
+		var $col = $template.clone().removeClass('template');
+		var url = (prFlg) ? '/kid/k/st/pr/pr' + e['掲載順'] + '.html' : '/kid/k/st/wg' + e['管理番号'] + '/';
+		var prString = (prFlg) ? 'のサンプル' : '';
+		$col.filter('[data-toc-url]').attr('href', url);
+		$col.find('[data-toc-url]').attr('href', url);
+		$col.find('[data-toc-page]').html(e['ページ情報']);
+		$col.find('[data-toc-number]').text(e['問題番号'] ).css( {'color': e['番号文字色'],'background-color': e['番号背景色']} );
+		$col.find('[data-toc-title]').text(e['動画タイトル'] );
+		$(selector).append( $col );
+	});
+}
+
+function queryExp(Q) {
+	var queryArr = location.search.replace('?', '').split('&');
+	var paraArr = {};
+	var i = 0;
+	while (i < queryArr.length) {
+		paraArr[queryArr[i].split('=')[0]] = queryArr[i].split('=')[1];
+		i++;
+	}
+	if (Q == 'Arr') {
+		//“Arr”なら配列ごと返す
+		return paraArr;
+	} else {
+		//Qというキーがある場合
+		if (paraArr[Q]) {
+			return paraArr[Q];
+		}
+		//Qというキーがない（＝undefined）の場合
+		else {
+			return 'blank';
+		}
+	}
+}
+
+function updateCookieExpire() {
+	var cookieHash = Cookies.get('naruhod-settings');
+	if (!!cookieHash) Cookies.set('naruhod-settings', cookieHash, { expires: 365, path: location.pathname.split('/').slice(0, 4).join('/') });
+}

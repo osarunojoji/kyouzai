@@ -1,0 +1,24 @@
+//ビデオ操作ボタン
+var video = $('#canvas > video').get(0);
+$('#play').on('click',function(){ video.play(); });
+$('#pause').on('click',function(){ video.pause(); });
+$('#repeat').on('click',function(){ video.currentTime = 0; video.play(); });
+
+//videoの再生・終了でGAにイベント送信
+$(video).on('play' , function(){ ga( 'send', 'event', 'kid', 'なるほ動画_整理と対策国語_ビデオ開始', video.src + '|' + $('#body #pageContentsWrap h3.title').text() ); });
+$(video).on('ended', function(){ ga( 'send', 'event', 'kid', 'なるほ動画_整理と対策国語_ビデオ終了', video.src + '|' + $('#body #pageContentsWrap h3.title').text() ); });
+
+//ディスプレイサイズが小さい端末の場合にclass追加処理
+if( $(window).width() < 414) $('#body').addClass('smdev');
+if( $(window).width() < 375) $('#btns2 button').addClass('btn-xs');
+
+//生徒用メニュー表示
+$('#gakusan-toc > ul:first-of-type, #gakusan-toc ul li .dropdown-menu li:nth-of-type(-n+4), #globalLink').addClass('hidden');
+
+//ロード時
+$(function(){
+	//ヘッダの高さだけスクロール
+	setTimeout(function() { if( window.pageYOffset == 0) window.scrollTo(0, 50); }, 100);
+});
+
+
